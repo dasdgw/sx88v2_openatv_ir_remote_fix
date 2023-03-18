@@ -1,0 +1,164 @@
+From 1b53f32b1fb1fffe827616a25d5a3d266a3463b9 Mon Sep 17 00:00:00 2001
+From: dasdgw <michifrank2@gmx.de>
+Date: Fri, 17 Mar 2023 14:21:00 +0100
+Subject: [PATCH 2/2] map sx88v2 remote control EV_MSC to EV_KEY
+
+the sx88v2 is reporting events of type EV_MSC.
+But rcinput filters for EV_KEY.
+Remap all EV_MSC events to unused EV_KEY events.
+---
+ configure.ac           |   4 ++
+ lib/driver/rcinput.cpp | 104 ++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 107 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index 15e1063870..d1be5ae415 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -596,6 +596,10 @@ if test "$BOXTYPE" == "cc1" -o "$BOXTYPE" == "sf8008" -o "$BOXTYPE" == "sf8008m"
+ 	AC_DEFINE(FORCE_ALPHABLENDING_ACCELERATION, 1,[define when the framebuffer acceleration has alphablending support, but detection slow down all])
+ fi
+ 
++if test "$BOXTYPE" == "sx88v2"; then
++	AC_DEFINE(SX88V2RC, 1,[enable octagon sx rcu 03 extra buttons])
++fi
++
+ if test "$BOXTYPE" == "alien5"; then
+ 	AC_DEFINE(HAVE_ALIEN5, 1,[enable Alien5 Tuner Hack only for testing])
+ fi
+diff --git a/lib/driver/rcinput.cpp b/lib/driver/rcinput.cpp
+index 48a94d567a..f28df8b960 100644
+--- a/lib/driver/rcinput.cpp
++++ b/lib/driver/rcinput.cpp
+@@ -13,10 +13,28 @@
+ #include <lib/base/init_num.h>
+ #include <lib/driver/input_fake.h>
+ 
++#define SX88V2_TV_PWR   0x7f8f10e
++#define SX88V2_TV_VOLM  0x7f8f20d
++#define SX88V2_TV_VOLP  0x7f8f30c
++#define SX88V2_TV_TVAV  0x7f8f40b
++
++#define SX88V2_IPTV     0x7f849b6
++#define SX88V2_SAT      0x7f8659a
++
++#define SX88V2_PREVIOUS 0x7f8629d
++#define SX88V2_NEXT     0x7f8609f
++
++#define SX88V2_NETFLIX  0x7f853ac
++#define SX88V2_KODI     0x7f857a8
++#define SX88V2_YOUTUBE  0x7f85da2
++#define SX88V2_WEBTV    0x7f8ea15
++
+ #if WETEKRC
+ static bool bflag;
+ #endif
+ 
++static unsigned short int pressedKey;
++
+ void eRCDeviceInputDev::handleCode(long rccode)
+ {
+ 	struct input_event *ev = (struct input_event *)rccode;
+@@ -33,7 +51,79 @@ void eRCDeviceInputDev::handleCode(long rccode)
+ 	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype after check for evvalue:-->BackspaceFLAG %d", bflag);
+ */
+ #endif
+-	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype: %x %x %x", ev->value, ev->code, ev->type);
++
++#if SX88V2RC
++	bool skipKey = false;
++	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype: value: %x code: %x type: %x", ev->value, ev->code, ev->type);
++	if ((ev->code == 0x4) && (ev->type == EV_MSC)) {
++		switch (ev->value)
++		{
++		case SX88V2_KODI:
++			//eDebug("[eRCDeviceInputDev] kodi key detected");
++			pressedKey = KEY_PLAYER;
++			break;
++		case SX88V2_NETFLIX:
++			pressedKey = KEY_MP3;
++			break;
++		case SX88V2_YOUTUBE:
++			pressedKey = KEY_KEYBOARD;
++			break;
++		case SX88V2_WEBTV:
++			pressedKey = KEY_VOD;
++			break;
++		case SX88V2_TV_PWR:
++			pressedKey = KEY_ZOOM;
++			break;
++		case SX88V2_TV_VOLM:
++			pressedKey = KEY_F10;
++			break;
++		case SX88V2_TV_VOLP:
++			pressedKey = KEY_F6;
++			break;
++		case SX88V2_TV_TVAV:
++			pressedKey = KEY_MEDIA;
++			break;
++		case SX88V2_IPTV:
++			pressedKey = KEY_WWW;
++			break;
++		case SX88V2_SAT:
++			pressedKey = KEY_ARCHIVE;
++			break;
++		case SX88V2_PREVIOUS:
++			pressedKey = KEY_PREVIOUS;
++			break;
++		case SX88V2_NEXT:
++			pressedKey = KEY_NEXT;
++			break;
++		default:
++			skipKey = true;
++			break;
++
++		}
++		// press
++		//input->keyPressed(eRCKey(this, pressedKey, 0)); /*emit*/
++		if (skipKey == false)
++		{
++			ev->value = 0x1;
++			ev->code = pressedKey;
++			ev->type = EV_KEY;
++		}
++	}
++
++	if ((ev->value == 0x0) && (ev->code == 0x0) && (ev->type == 0x0)) {
++		if (pressedKey != 0x0) {
++			//eDebug("[eRCDeviceInputDev] releasing last key");
++			// release
++			//input->keyPressed(eRCKey(this, pressedKey, eRCKey::flagBreak)); /*emit*/
++			ev->value = 0x0;
++			ev->code = pressedKey;
++			ev->type = EV_KEY;
++			pressedKey = 0x0;
++		}
++	}
++
++#endif
++
+ 	if (ev->type != EV_KEY)
+ 		return;
+ 		
+@@ -704,6 +794,18 @@ void eRCDeviceInputDev::handleCode(long rccode)
+ 	}
+ #endif
+ 
++#if SX88V2RC
++	// sx88v2 fastforward and rewind are swapped
++	if (ev->code == KEY_FASTFORWARD)
++	{
++		ev->code = KEY_REWIND;
++	}
++	else if (ev->code == KEY_REWIND)
++	{
++		ev->code = KEY_FASTFORWARD;
++	}
++#endif
++
+ 	}
+ 	
+ 	switch (ev->value)
+-- 
+2.34.1
+
