@@ -23,7 +23,8 @@ git am ../sx88v2_openatv_ir_remote_fix/*.patch
 
 now let's configure our local engima2 repo for openatv
 ```
-sed "s#git://github.com/openatv/enigma2.git;protocol=https;branch=7.2#git://$(realpath ../../enigma2/);protocol=file;branch=master#g" meta-oe-alliance/meta-oe/conf/distro/openatv.conf
+cd ../openatv7.2/build-enviroment
+sed -i "s#git://github.com/openatv/enigma2.git;protocol=https;branch=7.2#git://$(realpath ../../enigma2/);protocol=file;branch=master#g" meta-oe-alliance/meta-oe/conf/distro/openatv.conf
 ```
 
 to build the image basically follow the instructions under  
