@@ -2,7 +2,31 @@
 
 ## openatv
 
-basically follow the instructions under  
+first create a folder where collect all the repositories.
+```
+mkdir openatv
+cd openatv
+```
+
+clone this repo into that folder
+```
+git clone https://github.com/dasdgw/sx88v2_openatv_ir_remote_fix/
+```
+
+clone the openatv engima2 repo and apply the patches
+
+```
+git clone https://github.com/openatv/enigma2
+cd enigma2
+git am ../sx88v2_openatv_ir_remote_fix/*.patch
+```
+
+now let's configure our local engima2 repo for openatv
+```
+sed "s#git://github.com/openatv/enigma2.git;protocol=https;branch=7.2#git://$(realpath ../../enigma2/);protocol=file;branch=master#g" meta-oe-alliance/meta-oe/conf/distro/openatv.conf
+```
+
+to build the image basically follow the instructions under  
 https://github.com/openatv/enigma2  
 with some minor changes.
 
@@ -10,14 +34,6 @@ with some minor changes.
 - TODO check if 'Set your shell to /bin/bash' is necessary (feedback welcome)
 - no need to add a new user
 
-## local repo
-
-https://forums.openpli.org/topic/41127-how-to-build-openpli-with-custom-patches/?view=findpost&p=540969
-
-## apply patches to local repo of enigma2
-```
-git-am *.patch
-```
 ## build image
 ```
 MACHINE=sx88v2 DISTRO=openatv DISTRO_TYPE=release make enigma2-image
