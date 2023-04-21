@@ -1,8 +1,14 @@
 # sx88v2_openatv_ir_remote_fix
 
-# openatv
+## openatv
 
-https://github.com/openatv/enigma2
+basically follow the instructions under  
+https://github.com/openatv/enigma2  
+with some minor changes.
+
+- no need to set python3 as the default python interpreter. That's already the case, at least on ubuntu 22.04.
+- TODO check if 'Set your shell to /bin/bash' is necessary (feedback welcome)
+- no need to add a new user
 
 ## local repo
 
@@ -16,6 +22,7 @@ git-am *.patch
 ```
 MACHINE=sx88v2 DISTRO=openatv DISTRO_TYPE=release make enigma2-image
 ```
+If the build succeeded the image can be found under  
 builds/openatv/release/sx88v2/tmp/deploy/images/sx88v2/
 
 ## build package
