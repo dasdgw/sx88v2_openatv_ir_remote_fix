@@ -1,6 +1,6 @@
-From 1b53f32b1fb1fffe827616a25d5a3d266a3463b9 Mon Sep 17 00:00:00 2001
+From c92add3648c222089ae9844da5fa760ae59a4ca1 Mon Sep 17 00:00:00 2001
 From: dasdgw <michifrank2@gmx.de>
-Date: Fri, 17 Mar 2023 14:21:00 +0100
+Date: Thu, 20 Jun 2024 14:32:23 +0200
 Subject: [PATCH 2/2] map sx88v2 remote control EV_MSC to EV_KEY
 
 the sx88v2 is reporting events of type EV_MSC.
@@ -12,10 +12,10 @@ Remap all EV_MSC events to unused EV_KEY events.
  2 files changed, 107 insertions(+), 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index 15e1063870..d1be5ae415 100644
+index b11f145..8993c51 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -596,6 +596,10 @@ if test "$BOXTYPE" == "cc1" -o "$BOXTYPE" == "sf8008" -o "$BOXTYPE" == "sf8008m"
+@@ -617,6 +617,10 @@ if test "$BOXTYPE" == "sf8008" -o "$BOXTYPE" == "sf8008m" -o "$BOXTYPE" == "sx98
  	AC_DEFINE(FORCE_ALPHABLENDING_ACCELERATION, 1,[define when the framebuffer acceleration has alphablending support, but detection slow down all])
  fi
  
@@ -23,14 +23,14 @@ index 15e1063870..d1be5ae415 100644
 +	AC_DEFINE(SX88V2RC, 1,[enable octagon sx rcu 03 extra buttons])
 +fi
 +
- if test "$BOXTYPE" == "alien5"; then
- 	AC_DEFINE(HAVE_ALIEN5, 1,[enable Alien5 Tuner Hack only for testing])
- fi
+ if test "$BOXTYPE" == "et4x00" -o "$BOXTYPE" == "et5x00" -o "$BOXTYPE" == "et6x00" -o "$BOXTYPE" == "et7x00" -o "$BOXTYPE" == "et9x00" -o "$BOXTYPE" == "et8000" -o "$BOXTYPE" == "et8500" -o "$BOXTYPE" == "et8500s" -o "$BOXTYPE" == "et10000"; then
+ 	AC_DEFINE(KEY_PLAY_ACTUALLY_IS_KEY_PLAYPAUSE, 1,[define when rc sends a KEY_PLAY event for its KEY_PLAYPAUSE key])
+ 	AC_DEFINE(KEY_F3_TO_KEY_LIST, 1,[define when rc sends a KEY_F3 event for its KEY_LIST key])
 diff --git a/lib/driver/rcinput.cpp b/lib/driver/rcinput.cpp
-index 48a94d567a..f28df8b960 100644
+index 31b096c..834d569 100644
 --- a/lib/driver/rcinput.cpp
 +++ b/lib/driver/rcinput.cpp
-@@ -13,10 +13,28 @@
+@@ -13,10 +13,100 @@
  #include <lib/base/init_num.h>
  #include <lib/driver/input_fake.h>
  
@@ -50,19 +50,11 @@ index 48a94d567a..f28df8b960 100644
 +#define SX88V2_YOUTUBE  0x7f85da2
 +#define SX88V2_WEBTV    0x7f8ea15
 +
- #if WETEKRC
- static bool bflag;
- #endif
- 
 +static unsigned short int pressedKey;
 +
  void eRCDeviceInputDev::handleCode(long rccode)
  {
  	struct input_event *ev = (struct input_event *)rccode;
-@@ -33,7 +51,79 @@ void eRCDeviceInputDev::handleCode(long rccode)
- 	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype after check for evvalue:-->BackspaceFLAG %d", bflag);
- */
- #endif
 -	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype: %x %x %x", ev->value, ev->code, ev->type);
 +
 +#if SX88V2RC
@@ -140,7 +132,7 @@ index 48a94d567a..f28df8b960 100644
  	if (ev->type != EV_KEY)
  		return;
  		
-@@ -704,6 +794,18 @@ void eRCDeviceInputDev::handleCode(long rccode)
+@@ -581,6 +671,18 @@ void eRCDeviceInputDev::handleCode(long rccode)
  	}
  #endif
  
