@@ -21,10 +21,18 @@ cd enigma2
 git am ../sx88v2_openatv_ir_remote_fix/*.patch
 ```
 
+clone the build environment
+```
+cd ..
+# you can try to clone only the last commit but that does not work always
+# git clone --shallow-submodules --depth=1 --recurse-submodules -j8 https://github.com/oe-alliance/build-enviroment.git -b 5.4
+git clone --depth=1 --recurse-submodules -j8 https://github.com/oe-alliance/build-enviroment.git -b 5.4
+```
+
 now let's configure our local engima2 repo for openatv
 ```
-cd ../openatv7.2/build-enviroment
-sed -i "s#git://github.com/openatv/enigma2.git;protocol=https;branch=7.2#git://$(realpath ../../enigma2/);protocol=file;branch=master#g" meta-oe-alliance/meta-oe/conf/distro/openatv.conf
+cd build-enviroment
+sed -i "s#git://github.com/openatv/enigma2.git;protocol=https;branch=7.4#git://$(realpath ../../enigma2/);protocol=file;branch=master#g" meta-oe-alliance/meta-oe/conf/distro/openatv.conf
 ```
 
 to build the image basically follow the instructions under  
@@ -56,7 +64,7 @@ bitbake -f enigma2
 scp tmp/deploy/ipk/sx88v2/enigma2_7.2+git32194+9001055-r0_sx88v2.ipk
 ```
 
-auf receiver
+on receiver
 ```
 opkg install /tmp/enigma2_7.2+git32194+ab2f051-r0_sx88v2.ipk --force-overwrite --force-downgrade
 ```
@@ -75,3 +83,14 @@ init 3
 SX RCU 03  
 handled by hisi-ir.ko?  
 closed source module found in openatv source folder
+
+## update patches
+if you have to update the patches:
+- commit your changes
+- delete the old patches
+- recreate the patches
+```
+cd enigma2
+rm ../sx88v2_openatv_ir_remote_fix/000*
+git format-patch origin/master..master -o ../sx88v2_openatv_ir_remote_fix/
+```
