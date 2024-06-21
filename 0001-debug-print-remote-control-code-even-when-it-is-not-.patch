@@ -1,6 +1,6 @@
-From c253bd4b5ed9642e8fea6f005b203e738cdeeb4b Mon Sep 17 00:00:00 2001
+From a9b531ed359e7f8c7faf57af0ecaa281ecd42f28 Mon Sep 17 00:00:00 2001
 From: dasdgw <michifrank2@gmx.de>
-Date: Fri, 17 Mar 2023 10:01:29 +0100
+Date: Thu, 20 Jun 2024 14:11:26 +0200
 Subject: [PATCH 1/2] debug print remote control code, even when it is not an
  EV_KEY
 
@@ -9,13 +9,13 @@ Subject: [PATCH 1/2] debug print remote control code, even when it is not an
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/lib/driver/rcinput.cpp b/lib/driver/rcinput.cpp
-index ac27972a3d..48a94d567a 100644
+index 3195198..31b096c 100644
 --- a/lib/driver/rcinput.cpp
 +++ b/lib/driver/rcinput.cpp
-@@ -33,7 +33,7 @@ void eRCDeviceInputDev::handleCode(long rccode)
- 	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype after check for evvalue:-->BackspaceFLAG %d", bflag);
- */
- #endif
+@@ -16,7 +16,7 @@
+ void eRCDeviceInputDev::handleCode(long rccode)
+ {
+ 	struct input_event *ev = (struct input_event *)rccode;
 -
 +	eDebug("[eRCDeviceInputDev] ==> BEFORE check for evtype: %x %x %x", ev->value, ev->code, ev->type);
  	if (ev->type != EV_KEY)
